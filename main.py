@@ -45,55 +45,12 @@ def diversificationGeneratorForRandomPaths(DG: DiversificationGenerator, distanc
     print(f"*** Diversification Generator :: end - utworzono {len(diverseTrialSolutions)} rozwiązań ***")
     return diverseTrialSolutions
 
-
-def scatterSearch(
-        temporaryRefSet: list,
-        distancesMatrix: np.array,
-        iterations=50,
-        reverseProb=0.5,
-        scrambleProb=0.3) -> tuple:
-    """ Implementacja algorytmu przeszukiwania rozporoszonego
-        :parameter temporaryRefSet - początkowy zbiór RefSet wygenerowany w fazie inicjującej
-        :parameter distancesMatrix - macierz sąsiedztwa
-        :parameter iterations - liczba iteracji przeszukiwania
-        :parameter reverseProb - operator krzyżowania odwracający kolejność odwiedzin grupy miast, domyślnie 0.5
-        :parameter scrambleProb - operator krzyżowania mieszający kolejność odwiedzin grupy miast, domyślnie 0.3
-        :returns bestPathWithCost - najlepsza ścieżka i jej koszt , costs - koszt per iteracja, totalTime - łączny czas przeszukiwania
-     """
-    print("*** Scatter Search :: start ***")
-    RefSet = copy.deepcopy(temporaryRefSet)
-    b = len(RefSet)
-    bestPathWithCost = RefSet[0]
-    startTime = time()
-
-    costs = []
-    index = 0
-    scm = SolutionCombinationMethod()
-    for i in range(iterations):
-        C = []
-        """ 1. Krzyżowanie i poprawa rozwiązania algorytmem 2-opt """
-        for j in range(b):
-            C.append(scm.crossover(distancesMatrix, RefSet, reverseProb, scrambleProb))
-            C[j] = improvement.twoOpt(distancesMatrix, pathWithCost=C[j])
-
-        """ 2. Uzupełnienie zbioru RefSet elementami tablicy C """
-        [RefSet.append(C[i]) for i in range(b)]
-
-        """ 3. Sortowanie zbioru RefSet i wybór b najlepszych ścieżek """
-        RefSet.sort(key=lambda x: x[1])
-        RefSet = RefSet[:b]
-
-        """ 4. Aktualizacja najlepszej ścieżki o najnizszym koszcie """
-        if RefSet[0][1] < bestPathWithCost[1]:
-            bestPathWithCost = RefSet[0]
-        index += 1
-        costs.append(RefSet[0][1])
-        bestPathWithCost[1] = np.around(bestPathWithCost[1], 2)
-        print(f"i = {i + 1}/{iterations}, koszt = {bestPathWithCost[1]}, trasa = {bestPathWithCost[0][0:5]},...,{bestPathWithCost[0][len(bestPathWithCost) - 5:]}")
-    totalTime = time() - startTime
-    print(f"*** Scatter Search :: end - łączny czas przeszukiwania - {totalTime} sekund ***")
-    return bestPathWithCost, costs, totalTime
-
+def drawCostsPlot(costs: list, totalTime: float):
+    x = np.linspace(0, totalTime, num=len(costs))
+    plt.xlabel("Czas")
+    plt.ylabel("Koszt")
+    plt.plot(x, costs)
+    plt.show()
 
 def initialPhase(n: int, b: int, startElement: int) -> List[list]:
     """ Faza inicjująca algorytmu przeszukiwania rozporoszonego
@@ -134,6 +91,55 @@ def initialPhase(n: int, b: int, startElement: int) -> List[list]:
     return RefSet
 
 
+def scatterSearch(
+        temporaryRefSet: list,
+        distancesMatrix: np.array,
+        iterations=50,
+        reverseProb=0.5,
+        scrambleProb=0.3) -> tuple:
+    """ Implementacja algorytmu przeszukiwania rozporoszonego
+        :parameter temporaryRefSet - początkowy zbiór RefSet wygenerowany w fazie inicjującej
+        :parameter distancesMatrix - macierz sąsiedztwa
+        :parameter iterations - liczba iteracji przeszukiwania
+        :parameter reverseProb - operator krzyżowania odwracający kolejność odwiedzin grupy miast, domyślnie 0.5
+        :parameter scrambleProb - operator krzyżowania mieszający kolejność odwiedzin grupy miast, domyślnie 0.3
+        :returns bestPathWithCost - najlepsza ścieżka i jej koszt , costs - koszt per iteracja, totalTime - łączny czas przeszukiwania
+     """
+    print("*** Scatter Search :: start ***")
+    scm = SolutionCombinationMethod()
+    RefSet = copy.deepcopy(temporaryRefSet)
+    b = len(RefSet)
+    bestPathWithCost = RefSet[0]
+    startTime = time()
+
+    costs = []
+    index = 0
+    for i in range(iterations):
+        C = []
+        """ 1. Krzyżowanie i poprawa rozwiązania algorytmem 2-opt """
+        for j in range(b):
+            C.append(scm.crossover(distancesMatrix, RefSet, reverseProb, scrambleProb))
+            C[j] = improvement.twoOpt(distancesMatrix, pathWithCost=C[j])
+
+        """ 2. Uzupełnienie zbioru RefSet elementami tablicy C """
+        [RefSet.append(C[i]) for i in range(b)]
+
+        """ 3. Sortowanie zbioru RefSet i wybór b najlepszych ścieżek """
+        RefSet.sort(key=lambda x: x[1])
+        RefSet = RefSet[:b]
+
+        """ 4. Aktualizacja najlepszej ścieżki o najnizszym koszcie """
+        if RefSet[0][1] < bestPathWithCost[1]:
+            bestPathWithCost = RefSet[0]
+        index += 1
+        costs.append(RefSet[0][1])
+        bestPathWithCost[1] = np.around(bestPathWithCost[1], 2)
+        print(f"i = {i + 1}/{iterations}, koszt = {bestPathWithCost[1]}, trasa = {bestPathWithCost[0][0:5]},...,{bestPathWithCost[0][len(bestPathWithCost) - 5:]}")
+    totalTime = time() - startTime
+    print(f"*** Scatter Search :: end - łączny czas przeszukiwania - {totalTime} sekund ***")
+    return bestPathWithCost, costs, totalTime
+
+
 if __name__ == '__main__':
     """ zaladowananie problemu i obliczenie macierzy sąsiedztwa(odległości) pomiędzy miastami """
     matrixGenerator = DistanceMatrixGenerator(fileName="datasets/kroC100.tsp")
@@ -144,9 +150,9 @@ if __name__ == '__main__':
     RefSet = initialPhase(n=20, b=10, startElement=5)
 
     """ Rozpoczęcie fazy przeszukiwania rozproszonego """
-    bestPath, costs, totalTime = scatterSearch(RefSet, distancesMatrix, iterations=50)
+    bestPath, costs, totalTime = scatterSearch(RefSet, distancesMatrix, iterations=20)
     print(f"""Wyniki:\nDroga: {bestPath[0]}\nKoszt: {bestPath[1]}\nCzas podróży: {np.around(totalTime, 2)} sekund""")
 
-    # """ Przedstawienie wyników w formie wykresów """
-    # drawCostsPlot()
-    # drawResultPath(points, result)
+    """ Przedstawienie wyników w formie wykresów """
+    drawCostsPlot(costs, totalTime)
+    # TODO drawResultPath(points, result)
