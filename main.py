@@ -7,8 +7,11 @@ from typing import List
 from matplotlib import pyplot as plt
 from DistanceMatrixGenerator import DistanceMatrixGenerator
 from DiversificationGenerator import DiversificationGenerator
+from Improvement import Improvement
 from SolutionCombinationMethod import SolutionCombinationMethod
 from utils import calculatePathCost
+
+improvement = Improvement()
 
 
 def diversificationGeneratorForSeedPermutations(
@@ -42,38 +45,6 @@ def diversificationGeneratorForRandomPaths(DG: DiversificationGenerator, distanc
     print(f"*** Diversification Generator :: end - utworzono {len(diverseTrialSolutions)} rozwiązań ***")
     return diverseTrialSolutions
 
-def twoOptLocalImprovement(distanceMatrix: np.array, pathWithCost: list) -> list:
-    """ Funkcja 2-opt zamieniająca dwie krawędzie innymi krawędziami w celu utworzenia nowego cyklu
-        i próby zmiejszenia kosztu ścieżki
-        :parameter distanceMatrix - macierz sąsiedztwa
-        :parameter pathWithCost - ścieżka z obecnym kosztem
-        :return bestPath - ulepszona ścieżka z poprawionym kosztem
-     """
-    bestPath = copy.deepcopy(pathWithCost)
-    pathLength = len(bestPath[0])
-    currentPath = copy.deepcopy(bestPath)
-    resetPathVariable = copy.deepcopy(bestPath)
-    for i in range(0, pathLength - 2):
-        for j in range(i + 1, pathLength - 1):
-            currentPath[0] = twoOptSwap(bestPath[0], i, j)
-            currentPath[1] = calculatePathCost(distanceMatrix, currentPath[0])
-            if currentPath[1] < bestPath[1]:
-                for k in range(pathLength):
-                    """ przekopiowanie pozycji miast z ulepszonej drogi """
-                    bestPath[0][k] = currentPath[0][k]
-                bestPath[1] = currentPath[1]
-            currentPath = copy.deepcopy(resetPathVariable)
-    # print(f"pathWithCost: {pathWithCost}\nbestPath: {bestPath}")
-    return bestPath
-
-
-def twoOptSwap(path: list, i: int, j: int) -> list:
-    """ Funkcja zamieniająca kolejność elementów w tablicy od indeksu i do j """
-    swapped = copy.deepcopy(path)
-    swapped[i: j + 1] = list(reversed(swapped[i: j + 1]))
-    swapped[-1] = swapped[0]
-    return swapped
-
 
 def scatterSearch(
         temporaryRefSet: list,
@@ -103,7 +74,7 @@ def scatterSearch(
         """ 1. Krzyżowanie i poprawa rozwiązania algorytmem 2-opt """
         for j in range(b):
             C.append(scm.crossover(distancesMatrix, RefSet, reverseProb, scrambleProb))
-            C[j] = twoOptLocalImprovement(distancesMatrix, pathWithCost=C[j])
+            C[j] = improvement.twoOpt(distancesMatrix, pathWithCost=C[j])
 
         """ 2. Uzupełnienie zbioru RefSet elementami tablicy C """
         [RefSet.append(C[i]) for i in range(b)]
@@ -147,7 +118,7 @@ def initialPhase(n: int, b: int, startElement: int) -> List[list]:
             path = diverseTrialSolutions[i]
             pathCost = calculatePathCost(distancesMatrix, path)
             """ 1.2. Poprawa inicjalnych rozwiązań """
-            enhancedSolutions.append(twoOptLocalImprovement(distancesMatrix, [path, pathCost]))
+            enhancedSolutions.append(improvement.twoOpt(distancesMatrix, [path, pathCost]))
 
         """ 1.3. Uzupełnienie zbioru RefSet ulepszonymi ścieżkami"""
         print(f"Poprawiono {len(enhancedSolutions)} rozwiązań wstępnych")
