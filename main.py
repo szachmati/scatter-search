@@ -14,6 +14,7 @@ from utils import calculatePathCost
 
 improvementFactor = Improvement()
 
+
 def diversificationGeneratorForSeedPermutations(
         DG: DiversificationGenerator,
         distancesMatrix: np.array,
@@ -68,7 +69,7 @@ def drawResultPath(coordinates, path):
     """ 1. Skalowanie osi x i y w ceku lepszej czytelności wykresu"""
     plt.xlim(0, max(xArray) + 100)
     plt.ylim(0, max(yArray) + 100)
-    plt.scatter(xy[:,0], xy[:, 1], s=7)
+    plt.scatter(xy[:, 0], xy[:, 1], s=7)
     plt.plot(xy[:, 0], xy[:, 1])
     """ 2. Oznaczenie miasta startowego """
     plt.plot(xy[0, 0], xy[0, 1], marker='s', markersize=5, alpha=1, color='red')
@@ -122,7 +123,7 @@ def initialPhase(n: int, b: int, startElement: int) -> List[list]:
     return RefSet
 
 
-def scatterSearch(temporaryRefSet: list,  distancesMatrix: np.array, iterations=50) -> tuple:
+def scatterSearch(temporaryRefSet: list, distancesMatrix: np.array, iterations=50) -> tuple:
     """ Implementacja algorytmu przeszukiwania rozporoszonego
         :parameter temporaryRefSet - początkowy zbiór RefSet wygenerowany w fazie inicjującej
         :parameter distancesMatrix - macierz sąsiedztwa
@@ -140,13 +141,15 @@ def scatterSearch(temporaryRefSet: list,  distancesMatrix: np.array, iterations=
     index = 0
     for i in range(iterations):
         C = []
-        """ 1. Krzyżowanie i poprawa potomków algorytmem 2-opt """
+        """ 1. Krzyżowanie elementów """
         for j in range(b):
-            C.append(scm.crossover(distancesMatrix, RefSet))
-            C[j] = improvementFactor.twoOpt(distancesMatrix, pathWithCost=C[j])
+            [C.append(offspring) for offspring in scm.singlePointCrossover(distancesMatrix, RefSet)]
+        """ 1.1. Poprawa elementów algorytmem 2-opt"""
+        for j, pathWithCost in enumerate(C):
+            C[j] = improvementFactor.twoOpt(distancesMatrix, pathWithCost)
 
         """ 2. Uzupełnienie zbioru RefSet elementami tablicy C """
-        [RefSet.append(C[i]) for i in range(b)]
+        [RefSet.append(c) for c in C]
 
         """ 3. Sortowanie zbioru RefSet i wybór b najlepszych ścieżek """
         RefSet.sort(key=lambda x: x[1])
@@ -175,7 +178,8 @@ if __name__ == '__main__':
 
     """ Rozpoczęcie fazy przeszukiwania rozproszonego """
     bestPathWithCost, costs, totalTime = scatterSearch(RefSet, distancesMatrix, iterations=1)
-    print(f"""Wyniki:\nDroga: {bestPathWithCost[0]}\nKoszt: {bestPathWithCost[1]}\nCzas podróży: {np.around(totalTime, 2)} sekund""")
+    print(
+        f"""Wyniki:\nDroga: {bestPathWithCost[0]}\nKoszt: {bestPathWithCost[1]}\nCzas podróży: {np.around(totalTime, 2)} sekund""")
 
     """ Przedstawienie wyników w formie wykresów """
     drawCostsPlot(costs, totalTime)
