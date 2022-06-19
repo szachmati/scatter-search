@@ -50,9 +50,3 @@ class SolutionCombinationMethod:
         if len(offspring) < citiesCount:
             offspring.append(offspring[0])
         return [offspring, calculatePathCost(distanceMatrix, offspring)]
-
-    def singlePointCrossover(self):
-        pass
-
-    def multiplePointCrossover(self):
-        pass

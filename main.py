@@ -140,7 +140,7 @@ def scatterSearch(temporaryRefSet: list,  distancesMatrix: np.array, iterations=
     index = 0
     for i in range(iterations):
         C = []
-        """ 1. Krzyżowanie i poprawa rozwiązania algorytmem 2-opt """
+        """ 1. Krzyżowanie i poprawa potomków algorytmem 2-opt """
         for j in range(b):
             C.append(scm.crossover(distancesMatrix, RefSet))
             C[j] = improvementFactor.twoOpt(distancesMatrix, pathWithCost=C[j])
@@ -158,7 +158,7 @@ def scatterSearch(temporaryRefSet: list,  distancesMatrix: np.array, iterations=
         index += 1
         costs.append(RefSet[0][1])
         bestPathWithCost[1] = np.around(bestPathWithCost[1], 2)
-        print(f"i = {i + 1}/{iterations}, koszt = {bestPathWithCost[1]}, trasa = {bestPathWithCost[0][0:5]},...,{bestPathWithCost[0][len(bestPathWithCost) - 5:]}")
+        print(f"i = {i + 1}/{iterations}, koszt = {bestPathWithCost[1]}")
     totalTime = time() - startTime
     print(f"*** Scatter Search :: end - łączny czas przeszukiwania - {totalTime} sekund ***")
     return bestPathWithCost, costs, totalTime
