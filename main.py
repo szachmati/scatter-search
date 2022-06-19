@@ -52,8 +52,8 @@ def drawCostsPlot(costs: list, totalTime: float):
     plt.xlabel("Czas[s]")
     plt.ylabel("Koszt")
     plt.plot(x, costs)
-    plt.show()
     plt.savefig("tsp-costs-in-time.jpg")
+    plt.show()
 
 
 def drawResultPath(coordinates, path):
@@ -80,8 +80,8 @@ def drawResultPath(coordinates, path):
     """ 3. Dodajemy numer miasta nad kropką  """
     for i in range(len(path)):
         plt.annotate(f"{path[i]}", (xy[i, 0], xy[i, 1]), fontsize=8, color="black")
-    plt.show()
     plt.savefig("tsp-path.jpg")
+    plt.show()
 
 
 def initialPhase(n: int, b: int, startElement: int) -> List[list]:
