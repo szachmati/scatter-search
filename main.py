@@ -1,4 +1,5 @@
 import itertools
+import random
 from time import time
 import copy
 import numpy as np
@@ -11,8 +12,7 @@ from Improvement import Improvement
 from SolutionCombinationMethod import SolutionCombinationMethod
 from utils import calculatePathCost
 
-improvement = Improvement()
-
+improvementFactor = Improvement()
 
 def diversificationGeneratorForSeedPermutations(
         DG: DiversificationGenerator,
@@ -45,12 +45,44 @@ def diversificationGeneratorForRandomPaths(DG: DiversificationGenerator, distanc
     print(f"*** Diversification Generator :: end - utworzono {len(diverseTrialSolutions)} rozwiązań ***")
     return diverseTrialSolutions
 
+
 def drawCostsPlot(costs: list, totalTime: float):
     x = np.linspace(0, totalTime, num=len(costs))
-    plt.xlabel("Czas")
+    plt.xlabel("Czas[s]")
     plt.ylabel("Koszt")
     plt.plot(x, costs)
     plt.show()
+
+
+def drawResultPath(coordinates, path):
+    xy = np.zeros((len(path), 2))
+    for i in range(0, len(path)):
+        if i < len(path):
+            xy[i, 0] = coordinates[path[i] - 1][0]
+            xy[i, 1] = coordinates[path[i] - 1][1]
+        else:
+            print("elo")
+            xy[i, 0] = coordinates[path[0]-1][0]
+            xy[i, 1] = coordinates[path[0]-1][1]
+
+    xArray = []
+    yArray = []
+    for i in range(len(path)):
+        xArray.append(xy[i][0])
+        yArray.append(xy[i][1])
+    """ Skalowanie osi x i y w ceku lepszej czytelności wykresu"""
+    plt.xlim(0, max(xArray) + 100)
+    plt.ylim(0, max(yArray) + 100)
+    plt.plot(xy[:, 0], xy[:, 1], marker='s', alpha=1, markersize=5, color='black')
+    """ Oznaczenie miasta startowego """
+    plt.plot(xy[0, 0], xy[0, 1], marker='s', alpha=1, markersize=5, color='red')
+    """ Oznaczenie miasta drugiego """
+    plt.plot(xy[1, 0], xy[1, 1], marker='s', alpha=1, markersize=5, color='orange')
+    """ Podajemy pierwsze 3 miasta  """
+    for i in range(3):
+        plt.annotate(f"{path[i]}", (xy[i, 0], xy[i, 1] + 2), fontsize=12, color="blue")
+    plt.show()
+
 
 def initialPhase(n: int, b: int, startElement: int) -> List[list]:
     """ Faza inicjująca algorytmu przeszukiwania rozporoszonego
@@ -75,7 +107,7 @@ def initialPhase(n: int, b: int, startElement: int) -> List[list]:
             path = diverseTrialSolutions[i]
             pathCost = calculatePathCost(distancesMatrix, path)
             """ 1.2. Poprawa inicjalnych rozwiązań """
-            enhancedSolutions.append(improvement.twoOpt(distancesMatrix, [path, pathCost]))
+            enhancedSolutions.append(improvementFactor.twoOpt(distancesMatrix, [path, pathCost]))
 
         """ 1.3. Uzupełnienie zbioru RefSet ulepszonymi ścieżkami"""
         print(f"Poprawiono {len(enhancedSolutions)} rozwiązań wstępnych")
@@ -91,18 +123,11 @@ def initialPhase(n: int, b: int, startElement: int) -> List[list]:
     return RefSet
 
 
-def scatterSearch(
-        temporaryRefSet: list,
-        distancesMatrix: np.array,
-        iterations=50,
-        reverseProb=0.5,
-        scrambleProb=0.3) -> tuple:
+def scatterSearch(temporaryRefSet: list,  distancesMatrix: np.array, iterations=50) -> tuple:
     """ Implementacja algorytmu przeszukiwania rozporoszonego
         :parameter temporaryRefSet - początkowy zbiór RefSet wygenerowany w fazie inicjującej
         :parameter distancesMatrix - macierz sąsiedztwa
         :parameter iterations - liczba iteracji przeszukiwania
-        :parameter reverseProb - operator krzyżowania odwracający kolejność odwiedzin grupy miast, domyślnie 0.5
-        :parameter scrambleProb - operator krzyżowania mieszający kolejność odwiedzin grupy miast, domyślnie 0.3
         :returns bestPathWithCost - najlepsza ścieżka i jej koszt , costs - koszt per iteracja, totalTime - łączny czas przeszukiwania
      """
     print("*** Scatter Search :: start ***")
@@ -118,8 +143,8 @@ def scatterSearch(
         C = []
         """ 1. Krzyżowanie i poprawa rozwiązania algorytmem 2-opt """
         for j in range(b):
-            C.append(scm.crossover(distancesMatrix, RefSet, reverseProb, scrambleProb))
-            C[j] = improvement.twoOpt(distancesMatrix, pathWithCost=C[j])
+            C.append(scm.crossover(distancesMatrix, RefSet))
+            C[j] = improvementFactor.twoOpt(distancesMatrix, pathWithCost=C[j])
 
         """ 2. Uzupełnienie zbioru RefSet elementami tablicy C """
         [RefSet.append(C[i]) for i in range(b)]
@@ -150,9 +175,9 @@ if __name__ == '__main__':
     RefSet = initialPhase(n=20, b=10, startElement=5)
 
     """ Rozpoczęcie fazy przeszukiwania rozproszonego """
-    bestPath, costs, totalTime = scatterSearch(RefSet, distancesMatrix, iterations=20)
-    print(f"""Wyniki:\nDroga: {bestPath[0]}\nKoszt: {bestPath[1]}\nCzas podróży: {np.around(totalTime, 2)} sekund""")
+    bestPathWithCost, costs, totalTime = scatterSearch(RefSet, distancesMatrix, iterations=1)
+    print(f"""Wyniki:\nDroga: {bestPathWithCost[0]}\nKoszt: {bestPathWithCost[1]}\nCzas podróży: {np.around(totalTime, 2)} sekund""")
 
     """ Przedstawienie wyników w formie wykresów """
-    drawCostsPlot(costs, totalTime)
-    # TODO drawResultPath(points, result)
+    # drawCostsPlot(costs, totalTime)
+    drawResultPath(points, bestPathWithCost[0])
