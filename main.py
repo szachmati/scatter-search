@@ -52,36 +52,35 @@ def drawCostsPlot(costs: list, totalTime: float):
     plt.ylabel("Koszt")
     plt.plot(x, costs)
     plt.show()
+    plt.savefig("tsp-costs-in-time.jpg")
 
 
 def drawResultPath(coordinates, path):
     xy = np.zeros((len(path), 2))
     for i in range(0, len(path)):
-        if i < len(path):
-            xy[i, 0] = coordinates[path[i] - 1][0]
-            xy[i, 1] = coordinates[path[i] - 1][1]
-        else:
-            print("elo")
-            xy[i, 0] = coordinates[path[0]-1][0]
-            xy[i, 1] = coordinates[path[0]-1][1]
-
+        xy[i, 0] = coordinates[path[i] - 1][0]
+        xy[i, 1] = coordinates[path[i] - 1][1]
     xArray = []
     yArray = []
     for i in range(len(path)):
         xArray.append(xy[i][0])
         yArray.append(xy[i][1])
-    """ Skalowanie osi x i y w ceku lepszej czytelności wykresu"""
+    """ 1. Skalowanie osi x i y w ceku lepszej czytelności wykresu"""
     plt.xlim(0, max(xArray) + 100)
     plt.ylim(0, max(yArray) + 100)
-    plt.plot(xy[:, 0], xy[:, 1], marker='s', alpha=1, markersize=5, color='black')
-    """ Oznaczenie miasta startowego """
-    plt.plot(xy[0, 0], xy[0, 1], marker='s', alpha=1, markersize=5, color='red')
+    plt.scatter(xy[:,0], xy[:, 1], s=7)
+    plt.plot(xy[:, 0], xy[:, 1])
+    """ 2. Oznaczenie miasta startowego """
+    plt.plot(xy[0, 0], xy[0, 1], marker='s', markersize=5, alpha=1, color='red')
     """ Oznaczenie miasta drugiego """
-    plt.plot(xy[1, 0], xy[1, 1], marker='s', alpha=1, markersize=5, color='orange')
-    """ Podajemy pierwsze 3 miasta  """
-    for i in range(3):
-        plt.annotate(f"{path[i]}", (xy[i, 0], xy[i, 1] + 2), fontsize=12, color="blue")
+    plt.plot(xy[1, 0], xy[1, 1], marker='s', markersize=5, alpha=1, color='orange')
+    """ Oznaczenie miasta przedostatniego"""
+    plt.plot(xy[len(xy) - 2, 0], xy[len(xy) - 2, 1], marker='s', markersize=5, alpha=1, color='green')
+    """ 3. Dodajemy numer miasta nad kropką  """
+    for i in range(len(path)):
+        plt.annotate(f"{path[i]}", (xy[i, 0], xy[i, 1]), fontsize=8, color="black")
     plt.show()
+    plt.savefig("tsp-path.jpg")
 
 
 def initialPhase(n: int, b: int, startElement: int) -> List[list]:
@@ -179,5 +178,5 @@ if __name__ == '__main__':
     print(f"""Wyniki:\nDroga: {bestPathWithCost[0]}\nKoszt: {bestPathWithCost[1]}\nCzas podróży: {np.around(totalTime, 2)} sekund""")
 
     """ Przedstawienie wyników w formie wykresów """
-    # drawCostsPlot(costs, totalTime)
+    drawCostsPlot(costs, totalTime)
     drawResultPath(points, bestPathWithCost[0])
