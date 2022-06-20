@@ -5,6 +5,7 @@ import copy
 import numpy as np
 from typing import List
 
+import tsplib95
 from matplotlib import pyplot as plt
 from DistanceMatrixGenerator import DistanceMatrixGenerator
 from DiversificationGenerator import DiversificationGenerator
@@ -27,8 +28,7 @@ def diversificationGeneratorForSeedPermutations(
         :parameter n - ilość rozwiązań do wygenerowania przez DG
         :return diverseTrialSolutions
      """
-    seed = []
-    [seed.append(i) for i in range(1, distancesMatrix.shape[0] + 1)]
+    seed = list(range(1, distancesMatrix.shape[0] + 1))
     return DG.generate(seed, startElement, n)
 
 
@@ -40,6 +40,7 @@ def diversificationGeneratorForRandomPaths(DG: DiversificationGenerator, distanc
         :return diverseTrialSolutions - inicjalne rozwiązania
     """
     print("*** Diversification Generator :: start ***")
+    random.seed(1000)
     diverseTrialSolutions = []
     for i in range(0, n):
         diverseTrialSolutions.append(DG.generate2(distancesMatrix))
@@ -84,8 +85,9 @@ def drawResultPath(coordinates, path):
     plt.show()
 
 
-def initialPhase(n: int, b: int, startElement: int) -> List[list]:
+def initialPhase(distancesMatrix: np.array, n: int, b: int, startElement: int) -> List[list]:
     """ Faza inicjująca algorytmu przeszukiwania rozporoszonego
+        :parameter distancesMatrix - macierz odległości miast
         :parameter n - liczba początkowych rozwiązań utworzonych przez DG
         :parameter b - liczba rozwiązań zbioru RefSet
         :parameter startElement - element od którego zaczynają się permutacje wykonane na ziarnie np. 5 dla wersji z generatorem permutującym
@@ -141,12 +143,10 @@ def scatterSearch(temporaryRefSet: list, distancesMatrix: np.array, iterations=5
     index = 0
     for i in range(iterations):
         C = []
-        """ 1. Krzyżowanie elementów """
+        """ 1. Krzyżowanie elementów i poprawa algorytmem 2-opt"""
         for j in range(b):
-            [C.append(offspring) for offspring in scm.singlePointCrossover(distancesMatrix, RefSet)]
-        """ 1.1. Poprawa elementów algorytmem 2-opt"""
-        for j, pathWithCost in enumerate(C):
-            C[j] = improvementFactor.twoOpt(distancesMatrix, pathWithCost)
+            C.append(scm.crossover(distancesMatrix, RefSet))
+            C[j] = improvementFactor.twoOpt(distancesMatrix, C[j])
 
         """ 2. Uzupełnienie zbioru RefSet elementami tablicy C """
         [RefSet.append(c) for c in C]
@@ -169,18 +169,18 @@ def scatterSearch(temporaryRefSet: list, distancesMatrix: np.array, iterations=5
 
 if __name__ == '__main__':
     """ zaladowananie problemu i obliczenie macierzy sąsiedztwa(odległości) pomiędzy miastami """
-    matrixGenerator = DistanceMatrixGenerator(fileName="datasets/kroC100.tsp")
-    points = list(matrixGenerator.problem.node_coords.values())
-    distancesMatrix = np.array(matrixGenerator.createDistanceMatrix())
+    problem = tsplib95.load("datasets/kroC100.tsp")
+    citiesCoords = list(problem.node_coords.values())
+    matrixGenerator = DistanceMatrixGenerator()
+    distancesMatrix = np.array(matrixGenerator.createDistanceMatrix(citiesCoords))
 
     """ Rozpoczęcie fazy inicjującej """
-    RefSet = initialPhase(n=20, b=10, startElement=5)
+    RefSet = initialPhase(distancesMatrix, n=20, b=10, startElement=5)
 
     """ Rozpoczęcie fazy przeszukiwania rozproszonego """
-    bestPathWithCost, costs, totalTime = scatterSearch(RefSet, distancesMatrix, iterations=1)
-    print(
-        f"""Wyniki:\nDroga: {bestPathWithCost[0]}\nKoszt: {bestPathWithCost[1]}\nCzas podróży: {np.around(totalTime, 2)} sekund""")
+    bestPathWithCost, costs, totalTime = scatterSearch(RefSet, distancesMatrix, iterations=20)
+    print(f"Wyniki:\nDroga: {bestPathWithCost[0]}\nKoszt: {bestPathWithCost[1]}\nCzas podróży: {np.around(totalTime, 2)} sekund")
 
     """ Przedstawienie wyników w formie wykresów """
     drawCostsPlot(costs, totalTime)
-    drawResultPath(points, bestPathWithCost[0])
+    drawResultPath(citiesCoords, bestPathWithCost[0])

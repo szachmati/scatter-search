@@ -1,13 +1,8 @@
-import tsplib95
 from scipy.spatial import distance
 
 
 class DistanceMatrixGenerator:
-    """ Klasa odopowiedzialna za załadowanie problemu i utworzenie macierzy odległości pomiędzy miastami"""
-
-    def __init__(self, fileName):
-        self.fileName = fileName
-        self.problem = tsplib95.load(fileName)
+    """ Klasa odopowiedzialna za utworzenie macierzy odległości pomiędzy miastami"""
 
     def euclideanDistance(self, p1, p2) -> float:
         """ Oblicza długość euklidesową między dwoma miastami o współrzędnych (x,y)
@@ -16,7 +11,7 @@ class DistanceMatrixGenerator:
         """
         return distance.euclidean(p1, p2)
 
-    def createDistanceMatrix(self) -> list:
+    def createDistanceMatrix(self, coordinates) -> list:
         """ Funkcja tworząca macierz odległości pomiędzy miastami
             np. [0, 100, 150]
                 [50, 0, 100]
@@ -24,7 +19,6 @@ class DistanceMatrixGenerator:
             gdzie "0" - oznacza aktualne miasto, pozostałe wartości - koszt odwiedzenia danego miasta
         """
         distances = []
-        coordinates = list(self.problem.node_coords.values())
         for i in range(0, len(coordinates)):
             temp = []
             for j in range(0, len(coordinates)):

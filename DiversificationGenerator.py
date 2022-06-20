@@ -15,7 +15,7 @@ class DiversificationGenerator:
             https://www.researchgate.net/publication/313096950_Diversification_Methods_for_Zero-One_Optimization
         """
         print("*** Diversification Generator :: start ***")
-        g = startElement  # P(5,5) , P(5,4), P(5,3), P(5, 2), P(5, 1)
+        g = startElement  # np. P(5,5) , P(5,4), P(5,3), P(5, 2), P(5, 1)
         results = []
         maximum = max(seed)
         while len(results) < n:
